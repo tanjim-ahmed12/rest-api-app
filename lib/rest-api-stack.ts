@@ -48,7 +48,8 @@ export class RestAPIStack extends cdk.Stack {
         memorySize: 128,
         environment: {
           TABLE_NAME: moviesTable.tableName,
-          REGION: 'eu-west-1',
+          CAST_TABLE_NAME: movieCastsTable.tableName,
+          REGION: "eu-west-1",
         },
       }
       );
@@ -64,7 +65,7 @@ export class RestAPIStack extends cdk.Stack {
           memorySize: 128,
           environment: {
             TABLE_NAME: moviesTable.tableName,
-            REGION: 'eu-west-1',
+            REGION: "eu-west-1",
           },
         }
         );
@@ -135,9 +136,10 @@ export class RestAPIStack extends cdk.Stack {
     
         
         // Permissions 
-        moviesTable.grantReadData(getMovieByIdFn)
-        moviesTable.grantReadData(getAllMoviesFn)
-        moviesTable.grantReadWriteData(newMovieFn)
+        moviesTable.grantReadData(getMovieByIdFn);
+        movieCastsTable.grantReadData(getMovieByIdFn);
+        moviesTable.grantReadData(getAllMoviesFn);
+        moviesTable.grantReadWriteData(newMovieFn);
         moviesTable.grantReadWriteData(deleteMovieFn);
         movieCastsTable.grantReadData(getMovieCastMembersFn);
 
