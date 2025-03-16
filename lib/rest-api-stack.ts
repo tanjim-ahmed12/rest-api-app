@@ -135,6 +135,18 @@ export class RestAPIStack extends cdk.Stack {
           },
         });
 
+        const addMovieReviewFn = new lambdanode.NodejsFunction(this, "AddMovieReviewFn", {
+          architecture: lambda.Architecture.ARM_64,
+          runtime: lambda.Runtime.NODEJS_18_X,
+          entry: `${__dirname}/../lambdas/addMovieReview.ts`,
+          timeout: cdk.Duration.seconds(10),
+          memorySize: 128,
+          environment: {
+            REVIEWS_TABLE: reviewsTable.tableName,
+            REGION: "eu-west-1",
+          },
+        });
+
         
 
         
@@ -164,6 +176,7 @@ export class RestAPIStack extends cdk.Stack {
         moviesTable.grantReadWriteData(deleteMovieFn);
         movieCastsTable.grantReadData(getMovieCastMembersFn);
         reviewsTable.grantReadData(getMovieReviewsFn);
+        reviewsTable.grantReadWriteData(addMovieReviewFn);
 
 
 
@@ -181,6 +194,15 @@ export class RestAPIStack extends cdk.Stack {
         allowOrigins: ["*"],
       },
     });
+
+//     // Create Cognito Authorizer
+// const auth = new apig.CfnAuthorizer(this, "CognitoAuthorizer", {
+//   restApiId: api.restApiId,
+//   name: "CognitoAuth",
+//   type: "COGNITO_USER_POOLS",
+//   providerArns: ["arn:aws:cognito-idp:eu-west-1:043309332663:userpool/eu-west-1_s8ZEN9Oxe"],
+// });
+
 
     // Movies endpoint
     const moviesEndpoint = api.root.addResource("movies");
@@ -220,7 +242,16 @@ export class RestAPIStack extends cdk.Stack {
       new apig.LambdaIntegration(getMovieReviewsFn, {proxy: true}), 
     );
 
-        
+    
+    // Add movie reviews (without authentication)
+    reviewsEndpoint.addMethod(
+      "POST", 
+      new apig.LambdaIntegration(addMovieReviewFn)
+    );
+
+    
+
+    
       }
     }
     
