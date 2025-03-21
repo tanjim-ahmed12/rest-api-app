@@ -23,19 +23,19 @@ Prerequisites:
  * $ cd rest-api-app
 
 2. To install dependencies: 
-  $ npm install -g aws-cdk@2.176.0
+  * $ npm install -g aws-cdk@2.176.0
 
 3. To find the 12 digit AWS account number:
- $  aws sts get-caller-identity --query "Account" --output text
+   * $  aws sts get-caller-identity --query "Account" --output text
 
 4. Set Up AWS CDK: 
-  $ cdk bootstrap aws://YOUR-ACCOUNT-NUMBER/eu-west-1
+  * $ cdk bootstrap aws://YOUR-ACCOUNT-NUMBER/eu-west-1
 
 5. Deploy to aws: 
-  $ cdk deploy
+  * $ cdk deploy
 
 6. To remove the stack from AWS:
-   $ cdk destroy
+  * $ cdk destroy
 
 Source: https://tutors.dev/lab/enterprisewebdev-2025-setu-deise/topic02/book-1/AWS-CDK
 
