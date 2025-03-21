@@ -19,8 +19,8 @@ Prerequisites:
 ### Terminal commands:
 
 1. To clone the project: 
-  $ git clone https://github.com/tanjim-ahmed12/rest-api-app.git
-  $ cd rest-api-app
+ * $ git clone https://github.com/tanjim-ahmed12/rest-api-app.git
+ * $ cd rest-api-app
 
 2. To install dependencies: 
   $ npm install -g aws-cdk@2.176.0
