@@ -26,7 +26,7 @@ Prerequisites:
   * $ npm install -g aws-cdk@2.176.0
 
 3. To find the 12 digit AWS account number:
-   * $  aws sts get-caller-identity --query "Account" --output text
+  * $  aws sts get-caller-identity --query "Account" --output text
 
 4. Set Up AWS CDK: 
   * $ cdk bootstrap aws://YOUR-ACCOUNT-NUMBER/eu-west-1
