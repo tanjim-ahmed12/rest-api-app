@@ -31,20 +31,19 @@ export type MovieCastMemberQueryParams = {
 }
 
 export type MovieReview = {
-  reviewId: string;
-  movieId: number;
-  reviewerEmail: string;
-  reviewText: string;
-  rating: number; 
-  createdAt: string;
-  updatedAt?: string;
+  MovieId: number,
+  ReviewId: number,
+  ReviewerId: string,
+  ReviewDate: string,
+  Content: string,
+  
 };
 
 // Query parameters for fetching movie reviews
 export type MovieReviewQueryParams = {
-  movieId: string;
-  reviewId?: string;
-  reviewerEmail?: string;
+  MovieId: string;
+  ReviewId?: string;
+  ReviewerId?: string;
 };
 
 
