@@ -44,18 +44,18 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     let responseData = { movie: movieCommandOutput.Item };
 
     // Fetch cast if requested
-    if (includeCast) {
-      const castCommandOutput = await ddbDocClient.send(
-        new GetCommand({
-          TableName: process.env.CAST_TABLE_NAME, 
-          Key: { movieId: movieId },
-        })
-      );
+    // if (includeCast) {
+    //   const castCommandOutput = await ddbDocClient.send(
+    //     new GetCommand({
+    //       TableName: process.env.CAST_TABLE_NAME, 
+    //       Key: { movieId: movieId },
+    //     })
+    //   );
 
-      if (castCommandOutput.Item) {
-        responseData["cast"] = castCommandOutput.Item.cast;
-      }
-    }
+    //   if (castCommandOutput.Item) {
+    //     responseData["cast"] = castCommandOutput.Item.cast;
+    //   }
+    // }
 
     return {
       statusCode: 200,

@@ -5,10 +5,12 @@ import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as custom from "aws-cdk-lib/custom-resources";
 import { Construct } from "constructs";
 import * as apig from "aws-cdk-lib/aws-apigateway";
+// import * as cognito from "aws-cdk-lib/aws-cognito";
+// import * as iam from "aws-cdk-lib/aws-iam";
 
 // import * as sqs from 'aws-cdk-lib/aws-sqs';
 import { generateBatch } from "../shared/util";
-import { movies, movieCasts } from "../seed/movies";
+import { movies, movieCasts, movieReview} from "../seed/movies";
 
 export class RestAPIStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -36,14 +38,27 @@ export class RestAPIStack extends cdk.Stack {
 
     const reviewsTable = new dynamodb.Table(this, "ReviewsTable", {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      partitionKey: { name: "movieId", type: dynamodb.AttributeType.STRING },
-      sortKey: { name: "reviewId", type: dynamodb.AttributeType.STRING },
+      partitionKey: { name: "MovieId", type: dynamodb.AttributeType.NUMBER },
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       tableName: "Reviews",
     });
 
+    // // Cognito User pool
+    // const userPool = new cognito.UserPool(this, "MovieReviewUserPool", {
+    //   userPoolName: "MovieReviewUserPool",
+    //   selfSignUpEnabled: true,
+    //   signInAliases: { email: true },
+    //   autoVerify: { email: true },
+    // });
 
-    
+    // const userPoolClient = new cognito.UserPoolClient(this, "UserPoolClient", {
+    //   userPool,
+    // });
+
+    // const authorizer = new apig.CognitoUserPoolsAuthorizer(this, "APIAuthorizer", {
+    //   cognitoUserPools: [userPool],
+
+    // });
     // Functions 
     const getMovieByIdFn = new lambdanode.NodejsFunction(
       this,
@@ -122,34 +137,32 @@ export class RestAPIStack extends cdk.Stack {
       }
     );
 
-        // Functions
-        const getMovieReviewsFn = new lambdanode.NodejsFunction(this, "GetMovieReviewsFn", {
-          architecture: lambda.Architecture.ARM_64,
-          runtime: lambda.Runtime.NODEJS_18_X,
-          entry: `${__dirname}/../lambdas/getMovieReviews.ts`,
-          timeout: cdk.Duration.seconds(10),
-          memorySize: 128,
-          environment: {
-            TABLE_NAME: reviewsTable.tableName,
-            REGION: "eu-west-1",
-          },
-        });
+    // Get Reviews Function
+    const getMovieReviewsFn = new lambdanode.NodejsFunction(this, "GetMovieReviewsFn", {
+      architecture: lambda.Architecture.ARM_64,
+      runtime: lambda.Runtime.NODEJS_18_X,
+      entry: `${__dirname}/../lambdas/getReview.ts`,
+      timeout: cdk.Duration.seconds(10),
+      memorySize: 128,
+      environment: {
+        TABLE_NAME: reviewsTable.tableName,
+        REGION: "eu-west-1",
+      },
+    });
 
-        const addMovieReviewFn = new lambdanode.NodejsFunction(this, "AddMovieReviewFn", {
-          architecture: lambda.Architecture.ARM_64,
-          runtime: lambda.Runtime.NODEJS_18_X,
-          entry: `${__dirname}/../lambdas/addMovieReview.ts`,
-          timeout: cdk.Duration.seconds(10),
-          memorySize: 128,
-          environment: {
-            REVIEWS_TABLE: reviewsTable.tableName,
-            REGION: "eu-west-1",
-          },
-        });
-
-        
-
-        
+    // Add Review Function
+    const addReviewfn= new lambdanode.NodejsFunction(this, "AddMovieReviewsfn", {
+      architecture: lambda.Architecture.ARM_64,
+      runtime: lambda.Runtime.NODEJS_18_X,
+      entry: `${__dirname}/../lambdas/addReview.ts`,
+      timeout: cdk.Duration.seconds(10),
+      memorySize: 128,
+      environment: {
+        TABLE_NAME: reviewsTable.tableName,
+        REGION: "eu-west-1",
+      },
+    });
+       
         new custom.AwsCustomResource(this, "moviesddbInitData", {
           onCreate: {
             service: "DynamoDB",
@@ -157,13 +170,14 @@ export class RestAPIStack extends cdk.Stack {
             parameters: {
               RequestItems: {
                 [moviesTable.tableName]: generateBatch(movies),
-                [movieCastsTable.tableName]: generateBatch(movieCasts),  // Added
+                [movieCastsTable.tableName]: generateBatch(movieCasts),
+                [reviewsTable.tableName]: generateBatch(movieReview)  // Added
               },
             },
             physicalResourceId: custom.PhysicalResourceId.of("moviesddbInitData"), //.of(Date.now().toString()),
           },
           policy: custom.AwsCustomResourcePolicy.fromSdkCalls({
-            resources: [moviesTable.tableArn, movieCastsTable.tableArn],  // Includes movie cast
+            resources: [moviesTable.tableArn, movieCastsTable.tableArn, reviewsTable.tableArn],  // Includes movie cast
           }),
         });
     
@@ -176,7 +190,8 @@ export class RestAPIStack extends cdk.Stack {
         moviesTable.grantReadWriteData(deleteMovieFn);
         movieCastsTable.grantReadData(getMovieCastMembersFn);
         reviewsTable.grantReadData(getMovieReviewsFn);
-        reviewsTable.grantReadWriteData(addMovieReviewFn);
+        reviewsTable.grantReadWriteData(addReviewfn);
+
 
 
 
@@ -236,18 +251,31 @@ export class RestAPIStack extends cdk.Stack {
     );
 
     // Reviews endpoint
-    const reviewsEndpoint = moviesEndpoint.addResource("reviews");
-    reviewsEndpoint.addMethod(
-      "GET", 
-      new apig.LambdaIntegration(getMovieReviewsFn, {proxy: true}), 
+    const movieReviewsEndpoint = moviesEndpoint.addResource("reviews");
+    // GET /movies/reviews/{movieId}
+    const specificReviewEndpoint = movieReviewsEndpoint.addResource("{movieId}");
+    specificReviewEndpoint.addMethod("GET", new apig.LambdaIntegration(getMovieReviewsFn, { proxy: true }));
+
+    // Post /movies/reviews
+    movieReviewsEndpoint.addMethod(
+      "POST",
+      new apig.LambdaIntegration(addReviewfn, { proxy: true })
     );
+    // Add movie reviews 
+    // const api_new = new apig.RestApi(this, "MovieReviewAPI");
+
+    // movieReviewsEndpoint.addMethod("POST", new apig.LambdaIntegration(addReviewfn), {
+    //   authorizer,
+    //   authorizationType: apig.AuthorizationType.COGNITO,
+    // });
+
+    // new cdk.CfnOutput(this, "UserPoolId", { value: userPool.userPoolId });
+    // new cdk.CfnOutput(this, "UserPoolClientId", { value: userPoolClient.userPoolClientId });
+    // new cdk.CfnOutput(this, "APIEndpoint", { value: api.url });
+
 
     
-    // Add movie reviews (without authentication)
-    reviewsEndpoint.addMethod(
-      "POST", 
-      new apig.LambdaIntegration(addMovieReviewFn)
-    );
+
 
     
 
