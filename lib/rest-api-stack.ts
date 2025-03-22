@@ -11,6 +11,7 @@ import * as apig from "aws-cdk-lib/aws-apigateway";
 // import * as sqs from 'aws-cdk-lib/aws-sqs';
 import { generateBatch } from "../shared/util";
 import { movies, movieCasts, movieReview} from "../seed/movies";
+import * as iam from "aws-cdk-lib/aws-iam";
 
 export class RestAPIStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -176,6 +177,19 @@ export class RestAPIStack extends cdk.Stack {
         REGION: "eu-west-1",
       },
     });
+
+    // Translate Review Function
+    const translateReviewFn = new lambdanode.NodejsFunction(this, "TranslateReviewFn", {
+      architecture: lambda.Architecture.ARM_64,
+      runtime: lambda.Runtime.NODEJS_18_X,
+      entry: `${__dirname}/../lambdas/translateReview.ts`,
+      timeout: cdk.Duration.seconds(10),
+      memorySize: 128,
+      environment: {
+        TABLE_NAME: reviewsTable.tableName,
+        REGION: "eu-west-1",
+      },
+    });
        
         new custom.AwsCustomResource(this, "moviesddbInitData", {
           onCreate: {
@@ -206,6 +220,14 @@ export class RestAPIStack extends cdk.Stack {
         reviewsTable.grantReadData(getMovieReviewsFn);
         reviewsTable.grantReadWriteData(addReviewfn);
         reviewsTable.grantReadWriteData(updateReviewFn);
+        reviewsTable.grantReadData(translateReviewFn);
+
+        translateReviewFn.addToRolePolicy(
+          new iam.PolicyStatement({
+            actions: ["translate:TranslateText"],
+            resources: ["*"],
+          })
+        );
 
 
 
@@ -285,6 +307,12 @@ export class RestAPIStack extends cdk.Stack {
       "PUT",
       new apig.LambdaIntegration(updateReviewFn, { proxy: true })
     );
+
+    const specificTranslationEndpoint = specificMovieReviewEndpoint.addResource("translation");
+
+    specificTranslationEndpoint.addMethod("GET", new apig.LambdaIntegration(translateReviewFn, { proxy: true }));
+
+    
     // Add movie reviews 
     // const api_new = new apig.RestApi(this, "MovieReviewAPI");
 
