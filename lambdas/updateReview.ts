@@ -2,14 +2,14 @@ import { APIGatewayProxyHandlerV2 } from "aws-lambda";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 
-// Create DynamoDB Client
+
 const ddbDocClient = createDDbDocClient();
 
 export const handler: APIGatewayProxyHandlerV2 = async (event) => {
   try {
     console.log("[EVENT]", JSON.stringify(event));
 
-    // Extract path parameters
+  
     const movieId = event.pathParameters?.movieId;
     const reviewId = event.pathParameters?.reviewId;
 
@@ -21,7 +21,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       };
     }
 
-    // Parse request body
+    
     const body = event.body ? JSON.parse(event.body) : null;
     if (!body || !body.Content) {
       return {
@@ -31,7 +31,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       };
     }
 
-    // Update the review in DynamoDB
+    
     const updateCommand = new UpdateCommand({
       TableName: process.env.TABLE_NAME,
       Key: {
@@ -62,7 +62,6 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
   }
 };
 
-// Helper function to create DynamoDB Document Client
 function createDDbDocClient() {
   const ddbClient = new DynamoDBClient({ region: process.env.REGION });
   return DynamoDBDocumentClient.from(ddbClient);
