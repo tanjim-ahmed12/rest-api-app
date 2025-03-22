@@ -41,7 +41,7 @@ Source: https://tutors.dev/lab/enterprisewebdev-2025-setu-deise/topic02/book-1/A
 
 ### API Endpoints:
 
-1. Get a movie review using movieId (movies/reviews/{movieId})
-2. Add a movie review (movies/reviews)
-3. Update the movie review (movies/reviews/{movieId}/{reviewId})
+1. Get a movie review using movieId GET(movies/reviews/{movieId})
+2. Add a movie review POST(movies/reviews)
+3. Update the movie review PUT(movies/reviews/{movieId}/{reviewId})
 
